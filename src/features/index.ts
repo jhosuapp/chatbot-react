@@ -1,0 +1,1 @@
+export * from './feature-example/views/test.view';
