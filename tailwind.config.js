@@ -53,6 +53,9 @@ export default {
             width: {
                 limit: '1500px',
             },
+            maxWidth: {
+                limit: '1500px'
+            }
         },
     },
     safelist: [

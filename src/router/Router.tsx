@@ -1,8 +1,6 @@
 import { createBrowserRouter, redirect } from 'react-router-dom';
-import { Layout } from '../shared';
-import { anonymous } from '../guards';
-import { TestView } from '../features';
-import { HOME_PATH } from './routes.constant';
+import { ChatbotView } from '../features';
+import { CHATBOT_PATH } from './routes.constant';
 
 const Router = () => {
     return createBrowserRouter(
@@ -16,23 +14,19 @@ const Router = () => {
             {
                 id: 'root',
                 path: '/',
-                Component: Layout,
+                // Component: Layout,
                 errorElement: <div>Error</div>,
                 children: [
                     {
                         index: true,
                         id: 'home',
-                        path: HOME_PATH,
-                        loader: anonymous(),
-                        element: <TestView />,
+                        path: CHATBOT_PATH,
+                        element: <ChatbotView />,
                         HydrateFallback: () => <div>Loading...</div>,
                     },
                 ],
             },
         ],
-        {
-            basename: import.meta.env.BASE_URL,
-        },
     );
 };
 

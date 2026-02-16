@@ -1,0 +1,7 @@
+.logo{
+    @apply w-full max-w-56 2xl:max-w-72 block;
+}
+
+.logo img{
+    @apply w-full;
+}

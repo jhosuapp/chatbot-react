@@ -1,0 +1,11 @@
+.video{
+    @apply w-full h-[90%] relative z-10;
+}
+
+.video__container img{
+    @apply absolute w-full h-full object-cover;
+}
+
+.video__container{
+    @apply w-full h-full fixed left-0 bottom-0 flex items-end;
+}

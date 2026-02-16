@@ -1,0 +1,7 @@
+.qr{
+    @apply w-full max-w-40 2xl:max-w-60 block;
+}
+
+.qr img{
+    @apply w-full;
+}

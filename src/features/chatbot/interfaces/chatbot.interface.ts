@@ -1,0 +1,1 @@
+export type StatusMicrophone = "idle" | "listening" | "processing" | "error" | "unsupported";
