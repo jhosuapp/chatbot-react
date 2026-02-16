@@ -1,5 +1,5 @@
 .qr{
-    @apply w-full max-w-40 2xl:max-w-60 block;
+    @apply w-full max-w-40 2xl:max-w-60 hidden md:block;
 }
 
 .qr img{

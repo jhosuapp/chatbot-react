@@ -4,14 +4,16 @@ import { Video } from "../components/video/Video";
 import { useChatbotController } from "../hooks/useChatbot.controller";
 import { Logo } from "../components/logo/Logo";
 import { QR } from "../components/qr/QR";
+import { AudioVisualizer } from "../components/audio-visualizer/AudioVisualizer";
+import { WrapperBlur } from "../components/wrapper-blur/WrapperBlur";
 
 const ChatbotView = () => {
     const {
-        transcript,
         video,
         status,
         videoRef,
         startContinuousListening,
+        isSpeaking
     } = useChatbotController();
 
     return (
@@ -21,13 +23,23 @@ const ChatbotView = () => {
                     <Logo key={'static-logo'} />
                     <QR key={'static-qr'}/>
                 </div>
+
                 <AnimatePresence mode="wait">
                     {(status !== 'listening' && status !== 'processing') && (
                         <InitChat status={ status } startContinuousListening={ startContinuousListening } key={'cta'} />
                     )}
+                    {/* Visualizador de audio centrado */}
+                    {(status === 'listening' || status === 'processing')  &&(
+                        <WrapperBlur className="max-w-2xl" key={`static`}>
+                            <AudioVisualizer 
+                                isListening={ true } 
+                                isActive={isSpeaking}
+                            />
+                        </WrapperBlur>
+                    )}
                 </AnimatePresence>
 
-                {transcript && (
+                {/* {transcript && (
                     <div
                         style={{
                             padding: 15,
@@ -40,7 +52,7 @@ const ChatbotView = () => {
                             <strong>Escuché:</strong> "{transcript}"
                         </p>
                     </div>
-                )}
+                )} */}
 
                 {status === "unsupported" && (
                     <p style={{ color: "red" }}>

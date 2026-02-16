@@ -6,18 +6,21 @@ const useChatbotController = () => {
     const [transcript, setTranscript] = useState("");
     const [video, setVideo] = useState("/welcome.mp4");
     const [isVideoPlaying, setIsVideoPlaying] = useState(true);
+    const [isSpeaking, setIsSpeaking] = useState(false);
 
     const recognitionRef = useRef<any>(null);
     const videoRef = useRef<HTMLVideoElement | null>(null);
+    // @ts-ignore
+    const speakingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     const getVideoByMessage = (message: string) => {
         const text = message.toLowerCase();
 
-        if (text.includes("adoptar")) return "/videos/adopcion.mp4";
-        if (text.includes("donar")) return "/videos/donaciones.mp4";
-        if (text.includes("voluntario")) return "/videos/voluntariado.mp4";
+        if (text.includes("adoptar")) return "/diagnostico.mp4";
+        if (text.includes("donar")) return "/diagnostico.mp4";
+        if (text.includes("voluntario")) return "/diagnostico.mp4";
 
-        return "/videos/default.mp4";
+        return "/diagnostico.mp4";
     };
 
     const startContinuousListening = () => {
@@ -34,10 +37,8 @@ const useChatbotController = () => {
 
         const recognition = new SpeechRecognition();
         recognition.lang = "es-CO";
-        recognition.interimResults = true; // Detecta mientras habla
-        recognition.continuous = true; // Escucha continua
-
-        // Configuración para mejor detección de voz vs ruido
+        recognition.interimResults = true;
+        recognition.continuous = true;
         recognition.maxAlternatives = 1;
 
         recognition.onstart = () => {
@@ -52,6 +53,14 @@ const useChatbotController = () => {
 
             // Filtro de confianza para diferenciar voz de ruido
             if (confidence > 0.5 || transcriptText.length > 3) {
+                // NUEVO: Marcar que está hablando
+                setIsSpeaking(true);
+                
+                // NUEVO: Reset del timeout
+                if (speakingTimeoutRef.current) {
+                    clearTimeout(speakingTimeoutRef.current);
+                }
+
                 // Pausar video cuando detecta voz
                 if (videoRef.current && !videoRef.current.paused) {
                     videoRef.current.pause();
@@ -65,10 +74,14 @@ const useChatbotController = () => {
 
                     const selectedVideo = getVideoByMessage(transcriptText);
                     
-                    // Cambiar video si es diferente
                     if (selectedVideo !== video) {
                         setVideo(selectedVideo);
                     }
+
+                    // NUEVO: Marcar que dejó de hablar después de un momento
+                    speakingTimeoutRef.current = setTimeout(() => {
+                        setIsSpeaking(false);
+                    }, 500);
 
                     // Reanudar video después de procesar
                     setTimeout(() => {
@@ -85,14 +98,14 @@ const useChatbotController = () => {
         recognition.onerror = (event: any) => {
             console.error("Error de reconocimiento:", event.error);
             
-            // Ignorar errores de "no-speech" (silencio)
             if (event.error === "no-speech") {
+                setIsSpeaking(false);
                 return;
             }
 
             setStatus("error");
+            setIsSpeaking(false);
             
-            // Reintentar después de un error
             setTimeout(() => {
                 if (recognitionRef.current) {
                     recognition.start();
@@ -101,7 +114,8 @@ const useChatbotController = () => {
         };
 
         recognition.onend = () => {
-            // Reiniciar automáticamente para escucha continua
+            setIsSpeaking(false);
+            
             if (status !== "error" && recognitionRef.current) {
                 try {
                     recognition.start();
@@ -120,23 +134,35 @@ const useChatbotController = () => {
             recognitionRef.current.stop();
             recognitionRef.current = null;
             setStatus("idle");
+            setIsSpeaking(false);
+        }
+
+        if (speakingTimeoutRef.current) {
+            clearTimeout(speakingTimeoutRef.current);
         }
     };
 
-    // Cleanup al desmontar
     useEffect(() => {
         return () => {
             if (recognitionRef.current) {
                 recognitionRef.current.stop();
             }
+            if (speakingTimeoutRef.current) {
+                clearTimeout(speakingTimeoutRef.current);
+            }
         };
     }, []);
+
+    useEffect(()=>{
+        console.log(transcript);
+    },[transcript]);
 
     return {
         transcript,
         video,
         status,
         isVideoPlaying,
+        isSpeaking, 
         videoRef,
         startContinuousListening,
         stopListening

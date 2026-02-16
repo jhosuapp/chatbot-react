@@ -1,0 +1,8 @@
+.audioVisualizer{
+    @apply flex items-center justify-center gap-1 h-16;
+}
+
+.audioVisualizer div{
+    @apply w-1.5 bg-white rounded-full;
+    filter: drop-shadow(0 4px 4px #6DB5B1);
+}
