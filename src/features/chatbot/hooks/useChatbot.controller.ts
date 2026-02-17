@@ -13,27 +13,46 @@ const useChatbotController = () => {
     // @ts-ignore
     const speakingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     // @ts-ignore
-    const inactivityTimeoutRef = useRef<NodeJS.Timeout | null>(null); 
+    const inactivityTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const queryTextAnalize = useTextAnalizeQuery(transcript);
 
-    const getVideoByMessage = (message: string) => {
-        const text = message.toLowerCase();
-
-        if (text.includes("adoptar")) return "/diagnostico.mp4";
-        if (text.includes("donar")) return "/diagnostico.mp4";
-        if (text.includes("voluntario")) return "/diagnostico.mp4";
-
+    // ── 1. Video según category del endpoint ──────────────────────────────────
+    const getVideoByCategory = (category: 'default' | 'que_es') => {
+        if (category === 'que_es') return "/concepto-virus.mp4";
         return "/diagnostico.mp4";
     };
 
+    // ── 2. Pausar/reanudar reconocimiento según isLoading ─────────────────────
+    useEffect(() => {
+        if (!recognitionRef.current) return;
+
+        if (queryTextAnalize.isLoading) {
+            // Suspender escucha mientras el endpoint procesa
+            try {
+                recognitionRef.current.stop();
+            } catch (_) {}
+        } else if (status === "listening") {
+            // Reanudar escucha cuando la petición termina
+            try {
+                recognitionRef.current.start();
+            } catch (_) {}
+        }
+    }, [queryTextAnalize.isLoading]);
+
+    // ── Aplicar video cuando llega la respuesta del endpoint ──────────────────
+    useEffect(() => {
+        if (queryTextAnalize.data) {
+            const selectedVideo = getVideoByCategory(queryTextAnalize.data.category);
+            setVideo(selectedVideo);
+        }
+    }, [queryTextAnalize.data]);
+
     useEffect(() => {
         if (video === "/default-wait-answer.mp4" && status === "listening") {
-            // Limpiar timeout anterior si existe
             if (inactivityTimeoutRef.current) {
                 clearTimeout(inactivityTimeoutRef.current);
             }
 
-            // Iniciar nuevo timeout de 30 segundos
             inactivityTimeoutRef.current = setTimeout(() => {
                 console.log("30 segundos de inactividad, reiniciando...");
                 setStatus('idle');
@@ -41,9 +60,8 @@ const useChatbotController = () => {
                 setVideo('/welcome.mp4');
                 videoRef.current?.pause();
                 window.location.reload();
-            }, 30000); // 30 segundos
+            }, 32000);
         } else {
-            // Si cambia a otro video, limpiar el timeout
             if (inactivityTimeoutRef.current) {
                 clearTimeout(inactivityTimeoutRef.current);
                 inactivityTimeoutRef.current = null;
@@ -66,7 +84,7 @@ const useChatbotController = () => {
 
     useEffect(() => {
         const videoElement = videoRef.current;
-        
+
         if (!videoElement) return;
 
         const handleVideoEnd = () => {
@@ -105,40 +123,34 @@ const useChatbotController = () => {
         };
 
         recognition.onresult = (event: any) => {
+            // No procesar resultados si el endpoint está cargando
+            if (queryTextAnalize.isLoading) return;
+
             const current = event.resultIndex;
             const transcriptText = event.results[current][0].transcript;
             const confidence = event.results[current][0].confidence;
             const isFinal = event.results[current].isFinal;
 
-            // Filtro de confianza para diferenciar voz de ruido
             if (confidence > 0.5 || transcriptText.length > 3) {
                 setIsSpeaking(true);
-                
+
                 if (speakingTimeoutRef.current) {
                     clearTimeout(speakingTimeoutRef.current);
                 }
 
-                // Pausar video cuando detecta voz
                 if (videoRef.current && !videoRef.current.paused) {
                     videoRef.current.pause();
                     setIsVideoPlaying(false);
                 }
 
-                // Si es resultado final, procesar
                 if (isFinal) {
                     setTranscript(transcriptText);
                     setStatus("processing");
 
-                    const selectedVideo = getVideoByMessage(transcriptText);
-                    
-                    setVideo(selectedVideo);
-
-                    // Marcar que dejó de hablar después de un momento
                     speakingTimeoutRef.current = setTimeout(() => {
                         setIsSpeaking(false);
                     }, 500);
 
-                    // Reanudar video después de procesar
                     setTimeout(() => {
                         setStatus("listening");
                         if (videoRef.current) {
@@ -152,7 +164,7 @@ const useChatbotController = () => {
 
         recognition.onerror = (event: any) => {
             console.error("Error de reconocimiento:", event.error);
-            
+
             if (event.error === "no-speech") {
                 setIsSpeaking(false);
                 return;
@@ -160,7 +172,7 @@ const useChatbotController = () => {
 
             setStatus("error");
             setIsSpeaking(false);
-            
+
             setTimeout(() => {
                 if (recognitionRef.current) {
                     recognition.start();
@@ -170,7 +182,10 @@ const useChatbotController = () => {
 
         recognition.onend = () => {
             setIsSpeaking(false);
-            
+
+            // No reiniciar si el endpoint está procesando (se reanuda en el useEffect)
+            if (queryTextAnalize.isLoading) return;
+
             if (status !== "error" && recognitionRef.current) {
                 try {
                     recognition.start();
@@ -221,10 +236,10 @@ const useChatbotController = () => {
         video,
         status,
         isVideoPlaying,
-        isSpeaking, 
+        isSpeaking,
         videoRef,
         startContinuousListening,
-        stopListening, 
+        stopListening,
         queryTextAnalize
     };
 };

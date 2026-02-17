@@ -6,6 +6,7 @@ import { Logo } from "../components/logo/Logo";
 import { QR } from "../components/qr/QR";
 import { AudioVisualizer } from "../components/audio-visualizer/AudioVisualizer";
 import { WrapperBlur } from "../components/wrapper-blur/WrapperBlur";
+import { Loader } from "../components/loader/Loader";
 
 const ChatbotView = () => {
     const {
@@ -29,14 +30,19 @@ const ChatbotView = () => {
                     {(status !== 'listening' && status !== 'processing') && (
                         <InitChat status={ status } startContinuousListening={ startContinuousListening } key={'cta'} />
                     )}
-                    {/* Visualizador de audio centrado */}
-                    {(status === 'listening' || status === 'processing')  &&(
-                        <WrapperBlur className="max-w-2xl" key={`static`}>
-                            <AudioVisualizer 
-                                isListening={ true } 
-                                isActive={isSpeaking}
-                            />
-                        </WrapperBlur>
+                    {queryTextAnalize.isLoading ? (
+                        <Loader key={`static-loading`} />
+                    ) : (
+                        <>
+                            {(status === 'listening' || status === 'processing') && (
+                                <WrapperBlur className="max-w-2xl" key={`static`}>
+                                    <AudioVisualizer
+                                        isListening={ true }
+                                        isActive={ isSpeaking }
+                                    />
+                                </WrapperBlur>
+                            )}
+                        </>
                     )}
                 </AnimatePresence>
 
@@ -53,7 +59,7 @@ const ChatbotView = () => {
                 )}
             </div>
 
-            <Video 
+            <Video
                 video={ video }
                 videoRef={ videoRef as any }
             />
