@@ -6,6 +6,8 @@ type Props = {
 };  
 
 const Video = ({ video, videoRef }:Props) => {
+    const isWaitingVideo = video === "/default-wait-answer.mp4";
+
     return (
         <div className={ styles.video__container }>
             <img src="/bg.png" alt="" />
@@ -15,6 +17,7 @@ const Video = ({ video, videoRef }:Props) => {
                 src={video}
                 controls={false}
                 autoPlay
+                loop={isWaitingVideo}
                 className={ styles.video }
             />
         </div>

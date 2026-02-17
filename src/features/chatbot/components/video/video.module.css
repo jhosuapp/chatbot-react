@@ -1,5 +1,5 @@
 .video{
-    @apply w-full h-[90%] relative z-10;
+    @apply w-full h-[100%] relative z-10;
 }
 
 .video__container img{

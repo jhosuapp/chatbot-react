@@ -1,5 +1,6 @@
 import { useRef, useState, useEffect } from "react";
 import { StatusMicrophone } from "../interfaces/chatbot.interface";
+import { useTextAnalizeQuery } from "./useTextAnalize.query";
 
 const useChatbotController = () => {
     const [status, setStatus] = useState<StatusMicrophone>("idle");
@@ -7,11 +8,13 @@ const useChatbotController = () => {
     const [video, setVideo] = useState("/welcome.mp4");
     const [isVideoPlaying, setIsVideoPlaying] = useState(true);
     const [isSpeaking, setIsSpeaking] = useState(false);
-
     const recognitionRef = useRef<any>(null);
     const videoRef = useRef<HTMLVideoElement | null>(null);
     // @ts-ignore
     const speakingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    // @ts-ignore
+    const inactivityTimeoutRef = useRef<NodeJS.Timeout | null>(null); 
+    const queryTextAnalize = useTextAnalizeQuery(transcript);
 
     const getVideoByMessage = (message: string) => {
         const text = message.toLowerCase();
@@ -22,6 +25,62 @@ const useChatbotController = () => {
 
         return "/diagnostico.mp4";
     };
+
+    useEffect(() => {
+        if (video === "/default-wait-answer.mp4" && status === "listening") {
+            // Limpiar timeout anterior si existe
+            if (inactivityTimeoutRef.current) {
+                clearTimeout(inactivityTimeoutRef.current);
+            }
+
+            // Iniciar nuevo timeout de 30 segundos
+            inactivityTimeoutRef.current = setTimeout(() => {
+                console.log("30 segundos de inactividad, reiniciando...");
+                setStatus('idle');
+                setIsVideoPlaying(false);
+                setVideo('/welcome.mp4');
+                videoRef.current?.pause();
+                window.location.reload();
+            }, 30000); // 30 segundos
+        } else {
+            // Si cambia a otro video, limpiar el timeout
+            if (inactivityTimeoutRef.current) {
+                clearTimeout(inactivityTimeoutRef.current);
+                inactivityTimeoutRef.current = null;
+            }
+        }
+
+        return () => {
+            if (inactivityTimeoutRef.current) {
+                clearTimeout(inactivityTimeoutRef.current);
+            }
+        };
+    }, [video, status]);
+
+    useEffect(() => {
+        if (isSpeaking && inactivityTimeoutRef.current) {
+            clearTimeout(inactivityTimeoutRef.current);
+            inactivityTimeoutRef.current = null;
+        }
+    }, [isSpeaking]);
+
+    useEffect(() => {
+        const videoElement = videoRef.current;
+        
+        if (!videoElement) return;
+
+        const handleVideoEnd = () => {
+            if (status === "listening" && !isSpeaking && video !== "/default-wait-answer.mp4") {
+                setVideo("/default-wait-answer.mp4");
+            }
+        };
+
+        videoElement.addEventListener("ended", handleVideoEnd);
+
+        return () => {
+            videoElement.removeEventListener("ended", handleVideoEnd);
+        };
+    }, [status, isSpeaking, video]);
 
     const startContinuousListening = () => {
         const SpeechRecognition =
@@ -53,10 +112,8 @@ const useChatbotController = () => {
 
             // Filtro de confianza para diferenciar voz de ruido
             if (confidence > 0.5 || transcriptText.length > 3) {
-                // NUEVO: Marcar que está hablando
                 setIsSpeaking(true);
                 
-                // NUEVO: Reset del timeout
                 if (speakingTimeoutRef.current) {
                     clearTimeout(speakingTimeoutRef.current);
                 }
@@ -74,11 +131,9 @@ const useChatbotController = () => {
 
                     const selectedVideo = getVideoByMessage(transcriptText);
                     
-                    if (selectedVideo !== video) {
-                        setVideo(selectedVideo);
-                    }
+                    setVideo(selectedVideo);
 
-                    // NUEVO: Marcar que dejó de hablar después de un momento
+                    // Marcar que dejó de hablar después de un momento
                     speakingTimeoutRef.current = setTimeout(() => {
                         setIsSpeaking(false);
                     }, 500);
@@ -140,9 +195,14 @@ const useChatbotController = () => {
         if (speakingTimeoutRef.current) {
             clearTimeout(speakingTimeoutRef.current);
         }
+
+        if (inactivityTimeoutRef.current) {
+            clearTimeout(inactivityTimeoutRef.current);
+        }
     };
 
     useEffect(() => {
+        videoRef.current?.pause();
         return () => {
             if (recognitionRef.current) {
                 recognitionRef.current.stop();
@@ -150,12 +210,11 @@ const useChatbotController = () => {
             if (speakingTimeoutRef.current) {
                 clearTimeout(speakingTimeoutRef.current);
             }
+            if (inactivityTimeoutRef.current) {
+                clearTimeout(inactivityTimeoutRef.current);
+            }
         };
     }, []);
-
-    useEffect(()=>{
-        console.log(transcript);
-    },[transcript]);
 
     return {
         transcript,
@@ -165,7 +224,8 @@ const useChatbotController = () => {
         isSpeaking, 
         videoRef,
         startContinuousListening,
-        stopListening
+        stopListening, 
+        queryTextAnalize
     };
 };
 

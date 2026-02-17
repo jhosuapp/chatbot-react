@@ -9,26 +9,23 @@ interface AudioVisualizerProps {
 }
 
 const AudioVisualizer = ({ isListening, isActive }: AudioVisualizerProps) => {
-    const [bars, setBars] = useState<number[]>([0, 0, 0, 0, 0, 0, 0]);
+    const [bars, setBars] = useState<number[]>([20, 30, 50, 70, 50, 30, 20]);
 
     useEffect(() => {
         if (!isListening) {
+            setBars([20, 30, 50, 70, 50, 30, 20]);
+            return;
+        }
+
+        if (!isActive) {
             setBars([0, 0, 0, 0, 0, 0, 0]);
             return;
         }
 
         const interval = setInterval(() => {
-            if (isActive) {
-                // Animación cuando hay voz detectada
-                setBars(
-                    Array.from({ length: 7 }, () => Math.random() * 100)
-                );
-            } else {
-                // Animación suave de "en espera"
-                setBars(
-                    Array.from({ length: 7 }, () => Math.random() * 30 + 10)
-                );
-            }
+            setBars(
+                Array.from({ length: 7 }, () => Math.random() * 100)
+            );
         }, 100);
 
         return () => clearInterval(interval);
@@ -45,7 +42,7 @@ const AudioVisualizer = ({ isListening, isActive }: AudioVisualizerProps) => {
                         height: `${height}%`,
                     }}
                     transition={{
-                        duration: 0.1,
+                        duration: 0.15,
                         ease: "easeOut",
                     }}
                     style={{

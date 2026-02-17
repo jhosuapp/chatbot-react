@@ -13,7 +13,8 @@ const ChatbotView = () => {
         status,
         videoRef,
         startContinuousListening,
-        isSpeaking
+        isSpeaking,
+        queryTextAnalize
     } = useChatbotController();
 
     return (
@@ -38,21 +39,6 @@ const ChatbotView = () => {
                         </WrapperBlur>
                     )}
                 </AnimatePresence>
-
-                {/* {transcript && (
-                    <div
-                        style={{
-                            padding: 15,
-                            backgroundColor: "#e3f2fd",
-                            borderRadius: 5,
-                            marginBottom: 20
-                        }}
-                    >
-                        <p style={{ margin: 0 }}>
-                            <strong>Escuché:</strong> "{transcript}"
-                        </p>
-                    </div>
-                )} */}
 
                 {status === "unsupported" && (
                     <p style={{ color: "red" }}>
