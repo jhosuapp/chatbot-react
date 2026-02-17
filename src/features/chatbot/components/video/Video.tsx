@@ -1,4 +1,6 @@
+import { motion } from 'framer-motion';
 import styles from './video.module.css';
+import { fadeInMotion } from '../../../../shared/motion';
 
 type Props = {
     video: string;
@@ -11,7 +13,7 @@ const Video = ({ video, videoRef }:Props) => {
     return (
         <div className={ styles.video__container }>
             <img src="/bg.png" alt="" />
-            <video
+            <motion.video
                 ref={videoRef}
                 key={video}
                 src={video}
@@ -19,6 +21,7 @@ const Video = ({ video, videoRef }:Props) => {
                 autoPlay
                 loop={isWaitingVideo}
                 className={ styles.video }
+                {...fadeInMotion(0,0)}
             />
         </div>
     )

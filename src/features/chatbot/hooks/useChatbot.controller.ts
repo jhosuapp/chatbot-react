@@ -14,7 +14,19 @@ const useChatbotController = () => {
     const speakingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     // @ts-ignore
     const inactivityTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const isLoadingRef = useRef(false);
+    const statusRef = useRef<StatusMicrophone>("idle");
+
     const queryTextAnalize = useTextAnalizeQuery(transcript);
+
+    // Mantener refs sincronizadas con el estado real
+    useEffect(() => {
+        isLoadingRef.current = queryTextAnalize.isLoading;
+    }, [queryTextAnalize.isLoading]);
+
+    useEffect(() => {
+        statusRef.current = status;
+    }, [status]);
 
     // ── 1. Video según category del endpoint ──────────────────────────────────
     const getVideoByCategory = (category: 'default' | 'que_es') => {
@@ -22,42 +34,53 @@ const useChatbotController = () => {
         return "/diagnostico.mp4";
     };
 
-    // ── 2. Pausar/reanudar reconocimiento según isLoading ─────────────────────
+    // ── 2. Controlar video y reconocimiento según isLoading ───────────────────
     useEffect(() => {
-        if (!recognitionRef.current) return;
-
         if (queryTextAnalize.isLoading) {
-            // Suspender escucha mientras el endpoint procesa
-            try {
-                recognitionRef.current.stop();
-            } catch (_) {}
-        } else if (status === "listening") {
-            // Reanudar escucha cuando la petición termina
-            try {
-                recognitionRef.current.start();
-            } catch (_) {}
+            // Detener video completamente
+            if (videoRef.current) {
+                videoRef.current.pause();
+                videoRef.current.currentTime = 0;
+                setIsVideoPlaying(false);
+            }
+            // Detener reconocimiento
+            if (recognitionRef.current) {
+                try { recognitionRef.current.stop(); } catch (_) {}
+            }
         }
     }, [queryTextAnalize.isLoading]);
 
-    // ── Aplicar video cuando llega la respuesta del endpoint ──────────────────
+    // ── 3. Aplicar nuevo video y reproducirlo cuando llega la respuesta ───────
     useEffect(() => {
-        if (queryTextAnalize.data) {
-            const selectedVideo = getVideoByCategory(queryTextAnalize.data.category);
-            setVideo(selectedVideo);
+        if (!queryTextAnalize.data) return;
+
+        const selectedVideo = getVideoByCategory(queryTextAnalize.data.category);
+        setVideo(selectedVideo);
+
+        // Forzar carga del nuevo src y reproducir
+        if (videoRef.current) {
+            videoRef.current.load();
+            videoRef.current
+                .play()
+                .then(() => setIsVideoPlaying(true))
+                .catch((e) => console.error("Error al reproducir video:", e));
+        }
+
+        // Reanudar reconocimiento
+        if (recognitionRef.current) {
+            try { recognitionRef.current.start(); } catch (_) {}
         }
     }, [queryTextAnalize.data]);
 
+    // ── Timeout de inactividad ─────────────────────────────────────────────────
     useEffect(() => {
         if (video === "/default-wait-answer.mp4" && status === "listening") {
-            if (inactivityTimeoutRef.current) {
-                clearTimeout(inactivityTimeoutRef.current);
-            }
+            if (inactivityTimeoutRef.current) clearTimeout(inactivityTimeoutRef.current);
 
             inactivityTimeoutRef.current = setTimeout(() => {
-                console.log("30 segundos de inactividad, reiniciando...");
-                setStatus('idle');
+                setStatus("idle");
                 setIsVideoPlaying(false);
-                setVideo('/welcome.mp4');
+                setVideo("/welcome.mp4");
                 videoRef.current?.pause();
                 window.location.reload();
             }, 32000);
@@ -69,9 +92,7 @@ const useChatbotController = () => {
         }
 
         return () => {
-            if (inactivityTimeoutRef.current) {
-                clearTimeout(inactivityTimeoutRef.current);
-            }
+            if (inactivityTimeoutRef.current) clearTimeout(inactivityTimeoutRef.current);
         };
     }, [video, status]);
 
@@ -84,22 +105,19 @@ const useChatbotController = () => {
 
     useEffect(() => {
         const videoElement = videoRef.current;
-
         if (!videoElement) return;
 
         const handleVideoEnd = () => {
-            if (status === "listening" && !isSpeaking && video !== "/default-wait-answer.mp4") {
+            if (statusRef.current === "listening" && !isLoadingRef.current && video !== "/default-wait-answer.mp4") {
                 setVideo("/default-wait-answer.mp4");
             }
         };
 
         videoElement.addEventListener("ended", handleVideoEnd);
+        return () => videoElement.removeEventListener("ended", handleVideoEnd);
+    }, [video]);
 
-        return () => {
-            videoElement.removeEventListener("ended", handleVideoEnd);
-        };
-    }, [status, isSpeaking, video]);
-
+    // ── Iniciar escucha continua ───────────────────────────────────────────────
     const startContinuousListening = () => {
         const SpeechRecognition =
             (window as any).SpeechRecognition ||
@@ -120,11 +138,12 @@ const useChatbotController = () => {
 
         recognition.onstart = () => {
             setStatus("listening");
+            statusRef.current = "listening";
         };
 
         recognition.onresult = (event: any) => {
-            // No procesar resultados si el endpoint está cargando
-            if (queryTextAnalize.isLoading) return;
+            // ✅ Leer ref, no estado — evita stale closure
+            if (isLoadingRef.current) return;
 
             const current = event.resultIndex;
             const transcriptText = event.results[current][0].transcript;
@@ -134,9 +153,7 @@ const useChatbotController = () => {
             if (confidence > 0.5 || transcriptText.length > 3) {
                 setIsSpeaking(true);
 
-                if (speakingTimeoutRef.current) {
-                    clearTimeout(speakingTimeoutRef.current);
-                }
+                if (speakingTimeoutRef.current) clearTimeout(speakingTimeoutRef.current);
 
                 if (videoRef.current && !videoRef.current.paused) {
                     videoRef.current.pause();
@@ -146,18 +163,11 @@ const useChatbotController = () => {
                 if (isFinal) {
                     setTranscript(transcriptText);
                     setStatus("processing");
+                    statusRef.current = "processing";
 
                     speakingTimeoutRef.current = setTimeout(() => {
                         setIsSpeaking(false);
                     }, 500);
-
-                    setTimeout(() => {
-                        setStatus("listening");
-                        if (videoRef.current) {
-                            videoRef.current.play();
-                            setIsVideoPlaying(true);
-                        }
-                    }, 1000);
                 }
             }
         };
@@ -171,11 +181,12 @@ const useChatbotController = () => {
             }
 
             setStatus("error");
+            statusRef.current = "error";
             setIsSpeaking(false);
 
             setTimeout(() => {
                 if (recognitionRef.current) {
-                    recognition.start();
+                    try { recognition.start(); } catch (_) {}
                 }
             }, 1000);
         };
@@ -183,13 +194,11 @@ const useChatbotController = () => {
         recognition.onend = () => {
             setIsSpeaking(false);
 
-            // No reiniciar si el endpoint está procesando (se reanuda en el useEffect)
-            if (queryTextAnalize.isLoading) return;
+            // ✅ Leer ref, no estado — evita stale closure
+            if (isLoadingRef.current) return;
 
-            if (status !== "error" && recognitionRef.current) {
-                try {
-                    recognition.start();
-                } catch (e) {
+            if (statusRef.current !== "error" && recognitionRef.current) {
+                try { recognition.start(); } catch (e) {
                     console.error("Error al reiniciar:", e);
                 }
             }
@@ -204,30 +213,20 @@ const useChatbotController = () => {
             recognitionRef.current.stop();
             recognitionRef.current = null;
             setStatus("idle");
+            statusRef.current = "idle";
             setIsSpeaking(false);
         }
 
-        if (speakingTimeoutRef.current) {
-            clearTimeout(speakingTimeoutRef.current);
-        }
-
-        if (inactivityTimeoutRef.current) {
-            clearTimeout(inactivityTimeoutRef.current);
-        }
+        if (speakingTimeoutRef.current) clearTimeout(speakingTimeoutRef.current);
+        if (inactivityTimeoutRef.current) clearTimeout(inactivityTimeoutRef.current);
     };
 
     useEffect(() => {
         videoRef.current?.pause();
         return () => {
-            if (recognitionRef.current) {
-                recognitionRef.current.stop();
-            }
-            if (speakingTimeoutRef.current) {
-                clearTimeout(speakingTimeoutRef.current);
-            }
-            if (inactivityTimeoutRef.current) {
-                clearTimeout(inactivityTimeoutRef.current);
-            }
+            if (recognitionRef.current) recognitionRef.current.stop();
+            if (speakingTimeoutRef.current) clearTimeout(speakingTimeoutRef.current);
+            if (inactivityTimeoutRef.current) clearTimeout(inactivityTimeoutRef.current);
         };
     }, []);
 
@@ -240,7 +239,7 @@ const useChatbotController = () => {
         videoRef,
         startContinuousListening,
         stopListening,
-        queryTextAnalize
+        queryTextAnalize,
     };
 };
 
