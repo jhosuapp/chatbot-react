@@ -6,7 +6,7 @@ import styles from './logo.module.css';
 const Logo = () => {
     return (
         <motion.picture {...fadeInMotion(0,0)} className={ styles.logo }>
-            <img src="/logo.png" alt="Logo" />
+            <img src="/images/logo.png" alt="Logo" />
         </motion.picture>
     )
 }

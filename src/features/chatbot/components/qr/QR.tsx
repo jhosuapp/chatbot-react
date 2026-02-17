@@ -6,7 +6,7 @@ import styles from './qr.module.css';
 const QR = () => {
     return (
         <motion.picture {...fadeInMotion(0,0)} className={ styles.qr }>
-            <img src="/qr.png" alt="" />
+            <img src="/images/qr.png" alt="" />
         </motion.picture>
     )
 }

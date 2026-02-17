@@ -19,7 +19,6 @@ const useChatbotController = () => {
 
     const queryTextAnalize = useTextAnalizeQuery(transcript);
 
-    // Mantener refs sincronizadas con el estado real
     useEffect(() => {
         isLoadingRef.current = queryTextAnalize.isLoading;
     }, [queryTextAnalize.isLoading]);
@@ -34,16 +33,26 @@ const useChatbotController = () => {
         return "/diagnostico.mp4";
     };
 
+    // ── Habla con sentido real: para pausar video y enviar al endpoint ─────────
+    const isMeaningfulSpeech = (text: string, confidence: number): boolean => {
+        const trimmed = text.trim();
+        const wordCount = trimmed.split(/\s+/).filter(Boolean).length;
+        if (wordCount < 3) return false;
+        if (confidence < 0.75) return false;
+        const words = trimmed.toLowerCase().split(/\s+/);
+        const uniqueWords = new Set(words);
+        if (uniqueWords.size === 1 && words.length > 1) return false;
+        return true;
+    };
+
     // ── 2. Controlar video y reconocimiento según isLoading ───────────────────
     useEffect(() => {
         if (queryTextAnalize.isLoading) {
-            // Detener video completamente
             if (videoRef.current) {
                 videoRef.current.pause();
                 videoRef.current.currentTime = 0;
                 setIsVideoPlaying(false);
             }
-            // Detener reconocimiento
             if (recognitionRef.current) {
                 try { recognitionRef.current.stop(); } catch (_) {}
             }
@@ -57,7 +66,6 @@ const useChatbotController = () => {
         const selectedVideo = getVideoByCategory(queryTextAnalize.data.category);
         setVideo(selectedVideo);
 
-        // Forzar carga del nuevo src y reproducir
         if (videoRef.current) {
             videoRef.current.load();
             videoRef.current
@@ -66,7 +74,6 @@ const useChatbotController = () => {
                 .catch((e) => console.error("Error al reproducir video:", e));
         }
 
-        // Reanudar reconocimiento
         if (recognitionRef.current) {
             try { recognitionRef.current.start(); } catch (_) {}
         }
@@ -76,7 +83,6 @@ const useChatbotController = () => {
     useEffect(() => {
         if (video === "/default-wait-answer.mp4" && status === "listening") {
             if (inactivityTimeoutRef.current) clearTimeout(inactivityTimeoutRef.current);
-
             inactivityTimeoutRef.current = setTimeout(() => {
                 setStatus("idle");
                 setIsVideoPlaying(false);
@@ -142,7 +148,6 @@ const useChatbotController = () => {
         };
 
         recognition.onresult = (event: any) => {
-            // ✅ Leer ref, no estado — evita stale closure
             if (isLoadingRef.current) return;
 
             const current = event.resultIndex;
@@ -150,25 +155,29 @@ const useChatbotController = () => {
             const confidence = event.results[current][0].confidence;
             const isFinal = event.results[current].isFinal;
 
-            if (confidence > 0.5 || transcriptText.length > 3) {
+            // ── Animación: cualquier resultado intermedio activa isSpeaking ───
+            if (!isFinal) {
                 setIsSpeaking(true);
-
                 if (speakingTimeoutRef.current) clearTimeout(speakingTimeoutRef.current);
+                // Apagar animación si deja de hablar por 1.5s
+                speakingTimeoutRef.current = setTimeout(() => {
+                    setIsSpeaking(false);
+                }, 1500);
+                return;
+            }
+
+            // ── Acción real: solo si tiene sentido semántico ───────────────────
+            if (isFinal && isMeaningfulSpeech(transcriptText, confidence)) {
+                setIsSpeaking(false);
 
                 if (videoRef.current && !videoRef.current.paused) {
                     videoRef.current.pause();
                     setIsVideoPlaying(false);
                 }
 
-                if (isFinal) {
-                    setTranscript(transcriptText);
-                    setStatus("processing");
-                    statusRef.current = "processing";
-
-                    speakingTimeoutRef.current = setTimeout(() => {
-                        setIsSpeaking(false);
-                    }, 500);
-                }
+                setTranscript(transcriptText);
+                setStatus("processing");
+                statusRef.current = "processing";
             }
         };
 
@@ -194,7 +203,6 @@ const useChatbotController = () => {
         recognition.onend = () => {
             setIsSpeaking(false);
 
-            // ✅ Leer ref, no estado — evita stale closure
             if (isLoadingRef.current) return;
 
             if (statusRef.current !== "error" && recognitionRef.current) {

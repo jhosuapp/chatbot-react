@@ -12,7 +12,7 @@ const Video = ({ video, videoRef }:Props) => {
 
     return (
         <div className={ styles.video__container }>
-            <img src="/bg.png" alt="" />
+            <img src="/images/bg.png" alt="" />
             <motion.video
                 ref={videoRef}
                 key={video}

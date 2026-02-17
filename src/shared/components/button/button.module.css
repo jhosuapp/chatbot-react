@@ -1,0 +1,144 @@
+.button{
+    @apply w-full px-5 min-h-12 min-w-[150px] flex justify-center items-center gap-[15px] relative overflow-hidden; 
+}
+
+.button__icon{
+    @apply max-w-[17px] block w-full;
+}
+
+.button span{
+    transition: .3s ease left;
+    @apply leading-none font-medium uppercase relative left-0;
+}
+
+.button__icon {
+    transition: .3s ease left;
+    @apply absolute left-[-20px];
+}
+
+.button__iconSecondary{
+    transition: .3s ease all;
+    @apply w-[22.5px] relative right-0;
+}
+
+.button b{
+    transition: .3s ease transform;
+    @apply flex items-center justify-center min-w-[5px] h-[10px] relative overflow-hidden;
+}
+
+.button b::before{
+    content: "";
+    @apply w-[5px] h-[5px] rounded-full bg-black;
+}
+
+.button:hover span{
+    @apply  left-[20px];
+}
+
+.button:hover b{
+    @apply  scale-0;
+}
+
+button:hover .button__iconSecondary{
+    @apply right-[-15px];
+}
+
+.button:hover .button__icon{
+    @apply absolute left-[15px];
+}
+
+@media(max-width: 768px){
+    .button__iconSecondary{
+        @apply w-[20px];
+    }
+}
+
+/* Primary */
+.button--primary{
+    transition: .5s ease background-color;
+    @apply bg-primary rounded-md;
+}
+
+.button--primary:hover{
+    @apply bg-primary;
+}
+
+.button--primary span{
+    @apply text-black;
+}
+
+/* secondary */
+.button--secondary{
+    transition: .5s ease background-color;
+    @apply bg-tertiary rounded-md;
+}
+
+.button--secondary span{
+    @apply text-white;
+}
+
+.button--secondary b::before{
+    @apply bg-white;
+}
+
+.button--secondary .button__icon{
+    filter: invert(1) brightness(10000%);
+}
+
+/* Fit */
+
+.button--fit{
+    transition: .5s ease background-color;
+    @apply bg-gradient-to-r from-purple-900 via-purple-700 to-purple-500 rounded-md !w-fit !max-w-fit px-4 min-w-[auto] gap-1;
+}
+
+.button--fit .button__icon{
+    @apply hidden;
+}
+
+.button--fit span{
+    @apply text-white;
+}
+
+.button--fit .button__iconSecondary{
+    @apply min-w-4;
+}
+
+
+.button--fit:hover .button__iconSecondary{
+    @apply right-0;
+}
+
+/* loader button */
+
+.button__iconLoader{
+    animation: loader infinite linear 1s;
+    @apply w-7 max-w-7 min-w-7 ml-5;
+}
+
+.button__loader, 
+.button:disabled{
+    @apply !bg-gray-500 !pointer-events-none;
+}
+
+.button__loader .button__icon, 
+.button:disabled .button__icon{
+    @apply !hidden;
+}
+
+.button__small{
+    @apply min-h-9 min-w-32 max-w-28;
+}
+
+.button__small span{
+    @apply text-sm;
+}
+
+@keyframes loader {
+    from {
+        transform: rotate(0deg);
+    }
+    to{
+        transform: rotate(360deg);
+    }
+}

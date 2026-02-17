@@ -7,6 +7,7 @@ import { QR } from "../components/qr/QR";
 import { AudioVisualizer } from "../components/audio-visualizer/AudioVisualizer";
 import { WrapperBlur } from "../components/wrapper-blur/WrapperBlur";
 import { Loader } from "../components/loader/Loader";
+import { ModalWrapper } from "../../../shared/components";
 
 const ChatbotView = () => {
     const {
@@ -20,6 +21,7 @@ const ChatbotView = () => {
 
     return (
         <div className="w-full h-svh overflow-hidden px-[5%] animate-fadeIn">
+
             <div className="z-10 w-full relative h-full flex flex-col items-center py-[10vh] justify-between">
                 <div className="flex w-full items-start justify-between max-w-limit">
                     <Logo key={'static-logo'} />
@@ -47,15 +49,19 @@ const ChatbotView = () => {
                 </AnimatePresence>
 
                 {status === "unsupported" && (
-                    <p style={{ color: "red" }}>
-                        ❌ Tu navegador no soporta reconocimiento de voz.
-                    </p>
+                    <ModalWrapper 
+                        title="Tu navegador no soporta reconocimiento de voz."
+                        description="Prueba ingresando desde google chrome o en caso de estar desactualizado tu navegador, actualizalo, reinicia e ingresa de nuevo"
+                        hasResetFlux
+                    />
                 )}
 
                 {status === "error" && (
-                    <p style={{ color: "red" }}>
-                        ⚠️ Error al acceder al micrófono o procesar audio.
-                    </p>
+                    <ModalWrapper 
+                        title="Error al acceder al micrófono"
+                        description="Habilita los permisos de acceso al micrófono y recarga la página"
+                        hasResetFlux
+                    />
                 )}
             </div>
 

@@ -1,0 +1,43 @@
+.modalWrapper{
+    @apply fixed w-full h-full z-50 top-0 left-0 flex items-center justify-center;
+}
+
+.modalWrapper__bg{
+    @apply bg-black bg-opacity-40 absolute w-full h-full;
+}
+
+.modalWrapper__content{
+    @apply bg-white z-10 p-5 pb-10 rounded-md w-full max-w-lg max-h-[100svh] overflow-auto relative;
+}
+
+.modalWrapper__title{
+    @apply text-center pb-5 pt-4 max-w-80 mx-auto;
+}
+
+.modalWrapper__title p{
+    @apply text-lg uppercase font-bold;
+}
+
+.modalWrapper__button{
+    @apply w-7 h-7 block;
+}
+
+.modalWrapper__button img{
+    @apply w-full;
+}
+
+.modalWrapper__end{
+    @apply w-full flex justify-end;
+}
+
+.modalWrapper__icon{
+    @apply w-full block max-w-28 mx-auto;
+}
+
+.modalWrapper__icon img{
+    @apply w-full;
+}
+
+.modalWrapper__description{
+    @apply text-center w-full max-w-96 mx-auto;
+}
