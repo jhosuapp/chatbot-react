@@ -38,12 +38,23 @@ const useChatbotController = () => {
         return "/diagnostico.mp4";
     };
 
+    // ── Determinar umbral de confianza según el video actual ──────────────────
+    const getConfidenceThreshold = (): number => {
+        if (video !== "/default-wait-answer.mp4") {
+            return 0.85; // Umbral más alto = menos sensible al ruido ambiental
+        }
+        return 0.75; // Umbral normal cuando está en espera
+    };
+
     // ── Habla con sentido real: para pausar video y enviar al endpoint ─────────
     const isMeaningfulSpeech = (text: string, confidence: number): boolean => {
         const trimmed = text.trim();
         const wordCount = trimmed.split(/\s+/).filter(Boolean).length;
         if (wordCount < 3) return false;
-        if (confidence < 0.75) return false;
+        
+        const confidenceThreshold = getConfidenceThreshold();
+        if (confidence < confidenceThreshold) return false;
+        
         const words = trimmed.toLowerCase().split(/\s+/);
         const uniqueWords = new Set(words);
         if (uniqueWords.size === 1 && words.length > 1) return false;
