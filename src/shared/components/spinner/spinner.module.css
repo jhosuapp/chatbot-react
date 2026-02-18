@@ -1,0 +1,18 @@
+.spinner{
+    @apply w-10 h-10 block;
+    filter: drop-shadow(0 0 8.643px #149E96) drop-shadow(0 0 43.214px #149E96);
+}
+
+.spinner img{
+    @apply w-full block;
+    animation: rotateLoop 1s linear infinite;
+}
+
+@keyframes rotateLoop {
+    from{
+        transform: rotate(0deg);
+    }
+    to{
+        transform: rotate(360deg);
+    }
+}

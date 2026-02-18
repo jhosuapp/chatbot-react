@@ -1,4 +1,4 @@
-import { AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { InitChat } from "../components/init-chat/InitChat";
 import { Video } from "../components/video/Video";
 import { useChatbotController } from "../hooks/useChatbot.controller";
@@ -8,6 +8,7 @@ import { AudioVisualizer } from "../components/audio-visualizer/AudioVisualizer"
 import { WrapperBlur } from "../components/wrapper-blur/WrapperBlur";
 import { Loader } from "../components/loader/Loader";
 import { ModalWrapper } from "../../../shared/components";
+import { fadeInMotion } from "../../../shared/motion";
 
 const ChatbotView = () => {
     const {
@@ -25,7 +26,17 @@ const ChatbotView = () => {
             <div className="z-10 w-full relative h-full flex flex-col items-center py-[10vh] justify-between">
                 <div className="flex w-full items-start justify-between max-w-limit">
                     <Logo key={'static-logo'} />
-                    <QR key={'static-qr'}/>
+                    {status === 'idle' ? (
+                        <QR key={'static-qr'}/>
+                    ) : (
+                        <motion.p 
+                            className="global-text !text-xl 2xl:!text-3xl max-w-64 2xl:max-w-96 !text-right"
+                            key={`${queryTextAnalize.isLoading}-text`}
+                            {...fadeInMotion(0,0)}
+                        >
+                            {queryTextAnalize.isLoading ? 'Estamos procesando lo que dijiste' : '🎤 Te escucho'}
+                        </motion.p>
+                    )}
                 </div>
 
                 <AnimatePresence mode="wait">
@@ -60,6 +71,14 @@ const ChatbotView = () => {
                     <ModalWrapper 
                         title="Error al acceder al micrófono"
                         description="Habilita los permisos de acceso al micrófono y recarga la página"
+                        hasResetFlux
+                    />
+                )}
+
+                {queryTextAnalize.error && (
+                    <ModalWrapper 
+                        title="Ha ocurrido un error"
+                        description="Reinicia el flujo, e intenta de nuevo"
                         hasResetFlux
                     />
                 )}

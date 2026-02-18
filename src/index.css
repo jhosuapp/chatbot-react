@@ -1,3 +1,8 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+.global-text{
+    @apply text-sm 2xl:text-lg uppercase text-center text-white font-bold;
+    text-shadow: 0 0 8.643px #149E96, 0 0 43.214px #149E96;
+}
