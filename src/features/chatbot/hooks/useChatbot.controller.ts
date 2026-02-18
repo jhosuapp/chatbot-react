@@ -265,6 +265,16 @@ const useChatbotController = () => {
         };
     }, []);
 
+
+    // Data layers
+    useEffect(()=>{
+        window.dataLayer &&
+            window.dataLayer.push({
+                video_id: video,
+                event: "video-id",
+            });
+    },[video]);
+
     return {
         transcript,
         video,
