@@ -19,9 +19,17 @@ const useChatbotController = () => {
     const statusRef = useRef<StatusMicrophone>("idle");
     const queryTextAnalize = useTextAnalizeQuery(transcript);
 
-    document.body.addEventListener('click', ()=>{
-        videoRef.current?.play();
-    });
+    useEffect(() => {
+        const handleClick = () => {
+            status === 'idle' && videoRef.current?.play();
+        };
+    
+        document.body.addEventListener('click', handleClick);
+    
+        return () => {
+            document.body.removeEventListener('click', handleClick);
+        };
+    }, [status]);
 
     useEffect(() => {
         isLoadingRef.current = queryTextAnalize.isLoading;

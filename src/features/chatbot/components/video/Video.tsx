@@ -11,19 +11,22 @@ const Video = ({ video, videoRef }:Props) => {
     const isWaitingVideo = (video === "/default-wait-answer.mp4" || video === '/INTRONEW.mp4');
 
     return (
-        <div className={ styles.video__container }>
+        <motion.div 
+            className={ styles.video__container }
+            key={video}
+            {...fadeInMotion(0.1,0.2)}
+        >
             <img src="/images/bg.png" alt="" />
-            <motion.video
+            <video
                 ref={videoRef}
-                key={video}
+                key={`${video}-video-tag`}
                 src={video}
                 controls={false}
                 autoPlay
                 loop={isWaitingVideo}
-                className={ styles.video }
-                {...fadeInMotion(0,0)}
+                className={ styles.video }                
             />
-        </div>
+        </motion.div>
     )
 }
 
