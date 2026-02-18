@@ -8,7 +8,7 @@ type Props = {
 };  
 
 const Video = ({ video, videoRef }:Props) => {
-    const isWaitingVideo = video === "/default-wait-answer.mp4";
+    const isWaitingVideo = (video === "/default-wait-answer.mp4" || video === '/INTRONEW.mp4');
 
     return (
         <div className={ styles.video__container }>

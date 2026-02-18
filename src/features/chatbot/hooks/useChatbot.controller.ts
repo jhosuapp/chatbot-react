@@ -1,11 +1,12 @@
 import { useRef, useState, useEffect } from "react";
 import { StatusMicrophone } from "../interfaces/chatbot.interface";
 import { useTextAnalizeQuery } from "./useTextAnalize.query";
+import { AnalysisIds } from "../interfaces/textAnalize.interface";
 
 const useChatbotController = () => {
     const [status, setStatus] = useState<StatusMicrophone>("idle");
     const [transcript, setTranscript] = useState("");
-    const [video, setVideo] = useState("/welcome.mp4");
+    const [video, setVideo] = useState("/INTRONEW.mp4");
     const [isVideoPlaying, setIsVideoPlaying] = useState(true);
     const [isSpeaking, setIsSpeaking] = useState(false);
     const recognitionRef = useRef<any>(null);
@@ -16,8 +17,11 @@ const useChatbotController = () => {
     const inactivityTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const isLoadingRef = useRef(false);
     const statusRef = useRef<StatusMicrophone>("idle");
-
     const queryTextAnalize = useTextAnalizeQuery(transcript);
+
+    document.body.addEventListener('click', ()=>{
+        videoRef.current?.play();
+    });
 
     useEffect(() => {
         isLoadingRef.current = queryTextAnalize.isLoading;
@@ -28,8 +32,9 @@ const useChatbotController = () => {
     }, [status]);
 
     // ── 1. Video según category del endpoint ──────────────────────────────────
-    const getVideoByCategory = (category: 'default' | 'que_es') => {
-        if (category === 'que_es') return "/concepto-virus.mp4";
+    const getVideoByCategory = (category: AnalysisIds) => {
+        if (category) return `${category}.mp4`;
+        
         return "/diagnostico.mp4";
     };
 
@@ -63,7 +68,7 @@ const useChatbotController = () => {
     useEffect(() => {
         if (!queryTextAnalize.data) return;
 
-        const selectedVideo = getVideoByCategory(queryTextAnalize.data.category);
+        const selectedVideo = getVideoByCategory(queryTextAnalize.data.video_id);
         setVideo(selectedVideo);
 
         if (videoRef.current) {
@@ -89,7 +94,7 @@ const useChatbotController = () => {
                 setVideo("/welcome.mp4");
                 videoRef.current?.pause();
                 window.location.reload();
-            }, 32000);
+            }, 24000);
         } else {
             if (inactivityTimeoutRef.current) {
                 clearTimeout(inactivityTimeoutRef.current);
@@ -125,6 +130,9 @@ const useChatbotController = () => {
 
     // ── Iniciar escucha continua ───────────────────────────────────────────────
     const startContinuousListening = () => {
+        setVideo('A1_BIENVENIDA.mp4');
+        videoRef.current?.pause();
+
         const SpeechRecognition =
             (window as any).SpeechRecognition ||
             (window as any).webkitSpeechRecognition;
@@ -133,7 +141,7 @@ const useChatbotController = () => {
             setStatus("unsupported");
             return;
         }
-
+        
         videoRef.current?.play();
 
         const recognition = new SpeechRecognition();
