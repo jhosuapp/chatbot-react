@@ -7,12 +7,12 @@
 }
 
 .initChat h5{
-    @apply text-xl 2xl:text-3xl uppercase text-center text-white font-bold mb-2;
+    @apply text-xl 2xl:text-3xl uppercase text-center text-white font-bold mb-2 pointer-events-none;
     text-shadow: 0 0 8.643px #149e96, 0 0 43.214px rgb(20, 158, 150);
 }
 
 .initChat p{
-    @apply text-black text-xs text-center font-bold;
+    @apply text-black text-xs text-center font-bold pointer-events-none;
 }
 
 .initChat {
