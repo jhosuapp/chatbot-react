@@ -8,9 +8,26 @@
 
 .initChat h5{
     @apply text-xl 2xl:text-3xl uppercase text-center text-white font-bold mb-2;
-    text-shadow: 0 0 8.643px #149E96, 0 0 43.214px #149E96;
+    text-shadow: 0 0 8.643px #149e96, 0 0 43.214px rgb(20, 158, 150);
 }
 
 .initChat p{
     @apply text-black text-xs text-center font-bold;
+}
+
+.initChat {
+    fill: rgba(255, 255, 255, 0.03);
+    box-shadow: 0 0 34.571px 0 rgba(0, 213, 255, 0.20) inset, 0 0 8.643px 0 rgba(255, 255, 255, 0.10) inset;
+    filter: drop-shadow(0 6.914px 25.929px rgba(0, 0, 0, 0.20));
+    backdrop-filter: blur(43.21428680419922px);
+    @apply py-8 2xl:py-10 px-12 2xl:px-20 rounded-full max-w-xl cursor-pointer transition-all duration-300;
+}
+
+.initChat:hover {
+    box-shadow: 
+        0 0 34.571px 0 rgba(20, 158, 150, 0.45) inset, 
+        0 0 8.643px 0 rgba(20, 158, 150, 0.20) inset,
+        0 0 60px 15px rgba(20, 158, 150, 0.5),
+        0 12px 40px rgba(0, 0, 0, 0.4);
+    filter: drop-shadow(0 12px 35.929px rgba(0, 0, 0, 0.35));
 }

@@ -3,6 +3,7 @@ import { StatusMicrophone } from "../interfaces/chatbot.interface";
 import { useTextAnalizeQuery } from "./useTextAnalize.query";
 import { AnalysisIds } from "../interfaces/textAnalize.interface";
 
+const BOT_KEYWORDS = ["bot", "asistente", "vos"];
 const useChatbotController = () => {
     const [status, setStatus] = useState<StatusMicrophone>("idle");
     const [transcript, setTranscript] = useState("");
@@ -39,7 +40,6 @@ const useChatbotController = () => {
         statusRef.current = status;
     }, [status]);
 
-    // ── 1. Video según category del endpoint ──────────────────────────────────
     const getVideoByCategory = (category: AnalysisIds) => {
         if (category) return `${category}.mp4`;
         
@@ -49,13 +49,31 @@ const useChatbotController = () => {
     // ── Determinar umbral de confianza según el video actual ──────────────────
     const getConfidenceThreshold = (): number => {
         if (video !== "/default-wait-answer.mp4") {
-            return 0.85; // Umbral más alto = menos sensible al ruido ambiental
+            return 0.85; 
         }
-        return 0.75; // Umbral normal cuando está en espera
+        
+        return 0.75;
     };
 
-    // ── Habla con sentido real: para pausar video y enviar al endpoint ─────────
+    const isBotInvoked = (text: string): boolean => {
+        const words = text.toLowerCase().split(/\s+/);
+        return BOT_KEYWORDS.some(keyword => words.includes(keyword));
+    };
+
+    const cleanTranscript = (text: string): string => {
+        let cleanedText = text;
+        BOT_KEYWORDS.forEach(keyword => {
+            const regex = new RegExp(`\\b${keyword}\\b`, "gi");
+            cleanedText = cleanedText.replace(regex, "").trim();
+        });
+        return cleanedText.replace(/\s+/g, " ").trim();
+    };
+
     const isMeaningfulSpeech = (text: string, confidence: number): boolean => {
+        console.log(text);
+        // ── Primero validar que invoque al bot ──────────────────────────────
+        if (!isBotInvoked(text)) return false;
+
         const trimmed = text.trim();
         const wordCount = trimmed.split(/\s+/).filter(Boolean).length;
         if (wordCount < 3) return false;
@@ -201,8 +219,8 @@ const useChatbotController = () => {
                     videoRef.current.pause();
                     setIsVideoPlaying(false);
                 }
-
-                setTranscript(transcriptText);
+                const cleanedText = cleanTranscript(transcriptText);
+                setTranscript(cleanedText);
                 setStatus("processing");
                 statusRef.current = "processing";
             }

@@ -16,7 +16,7 @@ const Video = ({ video, videoRef }:Props) => {
             key={video}
             {...fadeInMotion(0.1,0.2)}
         >
-            <img src="/images/bg.png" alt="" />
+            {/* <img src="/images/bg.png" alt="" /> */}
             <video
                 ref={videoRef}
                 key={`${video}-video-tag`}

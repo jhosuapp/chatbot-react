@@ -11,7 +11,7 @@
 }
 
 .modalWrapper__title{
-    @apply text-center pb-5 pt-4 max-w-80 mx-auto;
+    @apply text-center pb-5 pt-4 max-w-80 mx-auto text-primary;
 }
 
 .modalWrapper__title p{

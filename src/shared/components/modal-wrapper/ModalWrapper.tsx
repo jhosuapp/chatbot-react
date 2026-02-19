@@ -44,7 +44,7 @@ const ModalWrapper = ({ children, title, description, callBackClose, hasResetFlu
                 {hasResetFlux && (
                     <Button
                         text="Entendido"
-                        style="secondary"
+                        style="primary"
                         onClick={ ()=> window.location.reload() }
                         className="mt-5"
                     />

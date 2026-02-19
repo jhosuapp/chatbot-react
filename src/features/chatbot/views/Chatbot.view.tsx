@@ -24,18 +24,44 @@ const ChatbotView = () => {
         <div className="w-full h-svh overflow-hidden px-[5%] animate-fadeIn">
 
             <div className="z-10 w-full relative h-full flex flex-col items-center py-[10vh] justify-between">
-                <div className="flex w-full items-start justify-between max-w-limit">
+                <div className="flex w-full items-start justify-between max-w-limit px-[10%]">
                     <Logo key={'static-logo'} />
                     {status === 'idle' ? (
                         <QR key={'static-qr'}/>
                     ) : (
-                        <motion.p 
-                            className="global-text !text-xl 2xl:!text-3xl max-w-64 2xl:max-w-96 !text-right"
-                            key={`${queryTextAnalize.isLoading}-text`}
-                            {...fadeInMotion(0,0)}
-                        >
-                            {queryTextAnalize.isLoading ? 'Estamos procesando lo que dijiste' : '🎤 Te escucho'}
-                        </motion.p>
+                        <AnimatePresence mode="wait">
+                            {queryTextAnalize.isLoading ? (
+                                <motion.p
+                                    className="global-text !text-xl 2xl:!text-3xl max-w-64 2xl:max-w-96 !text-right"
+                                    key={`${queryTextAnalize.isLoading}-text`}
+                                    {...fadeInMotion(0, 0)}
+                                    animate={
+                                        queryTextAnalize.isLoading
+                                        ? { opacity: [0.6, 1, 0.6] }
+                                        : { opacity: 1 }
+                                    }
+                                    transition={
+                                        queryTextAnalize.isLoading
+                                        ? {
+                                            duration: 2,
+                                            repeat: Infinity,
+                                            ease: "easeInOut",
+                                            }
+                                        : {}
+                                    }
+                                >
+                                    Estamos procesando lo que dijiste
+                                </motion.p>
+                            ) : (
+                                <motion.p 
+                                    className="global-text !text-xl 2xl:!text-3xl max-w-64 2xl:max-w-96 !text-right"
+                                    key={`${queryTextAnalize.isLoading}-text`}
+                                    {...fadeInMotion(0,0)}
+                                >
+                                    🎤 Te escucho
+                                </motion.p>                                
+                            )}
+                        </AnimatePresence>
                     )}
                 </div>
 

@@ -28,7 +28,7 @@
 
 .button b::before{
     content: "";
-    @apply w-[5px] h-[5px] rounded-full bg-black;
+    @apply w-[5px] h-[5px] rounded-full bg-white;
 }
 
 .button:hover span{
@@ -64,7 +64,7 @@ button:hover .button__iconSecondary{
 }
 
 .button--primary span{
-    @apply text-black;
+    @apply text-white;
 }
 
 /* secondary */

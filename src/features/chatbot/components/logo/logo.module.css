@@ -1,5 +1,5 @@
 .logo{
-    @apply w-full max-w-32 md:max-w-56 2xl:max-w-72 block;
+    @apply w-full max-w-32 md:max-w-44 2xl:max-w-72 block;
 }
 
 .logo img{
