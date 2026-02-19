@@ -4,6 +4,8 @@ import { useTextAnalizeQuery } from "./useTextAnalize.query";
 import { AnalysisIds } from "../interfaces/textAnalize.interface";
 
 const BOT_KEYWORDS = ["bot", "asistente", "vos"];
+const DEFAULT_VIDEO_NAME = '/default-wait-answer.mp4'
+
 const useChatbotController = () => {
     const [status, setStatus] = useState<StatusMicrophone>("idle");
     const [transcript, setTranscript] = useState("");
@@ -12,10 +14,8 @@ const useChatbotController = () => {
     const [isSpeaking, setIsSpeaking] = useState(false);
     const recognitionRef = useRef<any>(null);
     const videoRef = useRef<HTMLVideoElement | null>(null);
-    // @ts-ignore
-    const speakingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-    // @ts-ignore
-    const inactivityTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const speakingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const inactivityTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const isLoadingRef = useRef(false);
     const statusRef = useRef<StatusMicrophone>("idle");
     const queryTextAnalize = useTextAnalizeQuery(transcript);
@@ -48,7 +48,7 @@ const useChatbotController = () => {
 
     // ── Determinar umbral de confianza según el video actual ──────────────────
     const getConfidenceThreshold = (): number => {
-        if (video !== "/default-wait-answer.mp4") {
+        if (videoRef.current?.dataset.video !== DEFAULT_VIDEO_NAME) {
             return 0.85; 
         }
         
@@ -70,10 +70,9 @@ const useChatbotController = () => {
     };
 
     const isMeaningfulSpeech = (text: string, confidence: number): boolean => {
-        console.log(text);
         // ── Primero validar que invoque al bot ──────────────────────────────
-        if (!isBotInvoked(text)) return false;
-
+        if (!isBotInvoked(text) && videoRef.current?.dataset.video !== DEFAULT_VIDEO_NAME) return false;
+        
         const trimmed = text.trim();
         const wordCount = trimmed.split(/\s+/).filter(Boolean).length;
         if (wordCount < 3) return false;
@@ -123,9 +122,14 @@ const useChatbotController = () => {
 
     // ── Timeout de inactividad ─────────────────────────────────────────────────
     useEffect(() => {
-        if (video === "/default-wait-answer.mp4" && status === "listening") {
+        if (video === DEFAULT_VIDEO_NAME && status === "listening") {
             if (inactivityTimeoutRef.current) clearTimeout(inactivityTimeoutRef.current);
             inactivityTimeoutRef.current = setTimeout(() => {
+                window.dataLayer &&
+                window.dataLayer.push({
+                    reset_flux: 'Flujo reiniciado',
+                    event: "reset-flux",
+                });
                 setStatus("idle");
                 setIsVideoPlaying(false);
                 setVideo("/welcome.mp4");
@@ -156,8 +160,8 @@ const useChatbotController = () => {
         if (!videoElement) return;
 
         const handleVideoEnd = () => {
-            if (statusRef.current === "listening" && !isLoadingRef.current && video !== "/default-wait-answer.mp4") {
-                setVideo("/default-wait-answer.mp4");
+            if (statusRef.current === "listening" && !isLoadingRef.current && video !== DEFAULT_VIDEO_NAME) {
+                setVideo(DEFAULT_VIDEO_NAME);
             }
         };
 

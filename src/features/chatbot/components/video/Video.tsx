@@ -21,6 +21,7 @@ const Video = ({ video, videoRef }:Props) => {
                 ref={videoRef}
                 key={`${video}-video-tag`}
                 src={video}
+                data-video={video}
                 controls={false}
                 autoPlay
                 loop={isWaitingVideo}

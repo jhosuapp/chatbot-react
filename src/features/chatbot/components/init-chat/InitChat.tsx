@@ -17,6 +17,7 @@ const InitChat = ({ startContinuousListening }:Props) => {
             className={ styles.initChat }
             onClick={ startContinuousListening }
             whileTap={{ scale: 0.95 }} 
+            id="init-chat"
             {...fadeInMotion(0,0)}
         >
             <h5>INICIAR COVERSACIÓN</h5>
