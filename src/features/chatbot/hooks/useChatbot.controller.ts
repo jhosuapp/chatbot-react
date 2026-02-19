@@ -2,6 +2,7 @@ import { useRef, useState, useEffect } from "react";
 import { StatusMicrophone } from "../interfaces/chatbot.interface";
 import { useTextAnalizeQuery } from "./useTextAnalize.query";
 import { AnalysisIds } from "../interfaces/textAnalize.interface";
+import { useUsageQuery } from "./useUsage.query";
 
 const BOT_KEYWORDS = ["bot", "asistente", "vos"];
 const DEFAULT_VIDEO_NAME = '/default-wait-answer.mp4'
@@ -9,9 +10,12 @@ const DEFAULT_VIDEO_NAME = '/default-wait-answer.mp4'
 const useChatbotController = () => {
     const [status, setStatus] = useState<StatusMicrophone>("idle");
     const [transcript, setTranscript] = useState("");
+    const [counter, setCounter] = useState<number>(0);
+    const [initCounter, setInitCounter] = useState<boolean>(false);
     const [video, setVideo] = useState("/INTRONEW.mp4");
     const [isVideoPlaying, setIsVideoPlaying] = useState(true);
     const [isSpeaking, setIsSpeaking] = useState(false);
+    const counterRef = useRef(0);
     const recognitionRef = useRef<any>(null);
     const videoRef = useRef<HTMLVideoElement | null>(null);
     const speakingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -19,6 +23,18 @@ const useChatbotController = () => {
     const isLoadingRef = useRef(false);
     const statusRef = useRef<StatusMicrophone>("idle");
     const queryTextAnalize = useTextAnalizeQuery(transcript);
+    const mutation = useUsageQuery();
+    console.log(counter);
+    
+    useEffect(()=>{
+        initCounter && setInterval(() => {
+            setCounter(prev => prev + 1);
+        }, 1000);
+    },[initCounter]);
+
+    useEffect(() => {
+        counterRef.current = counter;
+    }, [counter]);
 
     useEffect(() => {
         const handleClick = () => {
@@ -41,9 +57,7 @@ const useChatbotController = () => {
     }, [status]);
 
     const getVideoByCategory = (category: AnalysisIds) => {
-        if (category) return `${category}.mp4`;
-        
-        return "/diagnostico.mp4";
+        return `${category}.mp4`;
     };
 
     // ── Determinar umbral de confianza según el video actual ──────────────────
@@ -124,17 +138,33 @@ const useChatbotController = () => {
     useEffect(() => {
         if (video === DEFAULT_VIDEO_NAME && status === "listening") {
             if (inactivityTimeoutRef.current) clearTimeout(inactivityTimeoutRef.current);
-            inactivityTimeoutRef.current = setTimeout(() => {
+            inactivityTimeoutRef.current = setTimeout(async() => {
                 window.dataLayer &&
                 window.dataLayer.push({
                     reset_flux: 'Flujo reiniciado',
                     event: "reset-flux",
                 });
-                setStatus("idle");
-                setIsVideoPlaying(false);
-                setVideo("/welcome.mp4");
-                videoRef.current?.pause();
-                window.location.reload();
+                
+                try{
+                    await mutation.mutateAsync({
+                        usage_time_seconds: counterRef.current,
+                        session_id: 'Cliente',
+                        additional_data: {
+                            page: 'Info'
+                        }
+                    });
+                } catch(error) {
+                    console.log(error);
+                } finally {
+                    setStatus("idle");
+                    setIsVideoPlaying(false);
+                    videoRef.current?.pause();
+                    setVideo("/A1_BIENVENIDA.mp4");
+                    setCounter(0);
+                    setInitCounter(false);
+                    window.location.reload();
+                }
+
             }, 24000);
         } else {
             if (inactivityTimeoutRef.current) {
@@ -172,6 +202,7 @@ const useChatbotController = () => {
     // ── Iniciar escucha continua ───────────────────────────────────────────────
     const startContinuousListening = () => {
         setVideo('A1_BIENVENIDA.mp4');
+        setInitCounter(true);
         videoRef.current?.pause();
 
         const SpeechRecognition =

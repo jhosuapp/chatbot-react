@@ -10,7 +10,6 @@ type Props = {
     startContinuousListening: ()=> void;
 }
 
-
 const InitChat = ({ startContinuousListening }:Props) => {
     return (
         <motion.div 
