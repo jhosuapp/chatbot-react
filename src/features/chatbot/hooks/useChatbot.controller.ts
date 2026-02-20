@@ -4,7 +4,7 @@ import { useTextAnalizeQuery } from "./useTextAnalize.query";
 import { AnalysisIds } from "../interfaces/textAnalize.interface";
 import { useUsageQuery } from "./useUsage.query";
 
-const BOT_KEYWORDS = ["bot", "asistente", "vos"];
+const BOT_KEYWORDS = ["bot", "asistente", "vos", "pregunta"];
 const DEFAULT_VIDEO_NAME = '/default-wait-answer.mp4'
 
 const useChatbotController = () => {
@@ -13,8 +13,9 @@ const useChatbotController = () => {
     const [counter, setCounter] = useState<number>(0);
     const [initCounter, setInitCounter] = useState<boolean>(false);
     const [video, setVideo] = useState("/INTRONEW.mp4");
-    const [isVideoPlaying, setIsVideoPlaying] = useState(true);
-    const [isSpeaking, setIsSpeaking] = useState(false);
+    const [isVideoPlaying, setIsVideoPlaying] = useState<boolean>(true);
+    const [isSpeaking, setIsSpeaking] = useState<boolean>(false);
+    const [isVideoDefault, setIsVideoDefault] = useState<boolean>(false);
     const counterRef = useRef(0);
     const recognitionRef = useRef<any>(null);
     const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -24,7 +25,6 @@ const useChatbotController = () => {
     const statusRef = useRef<StatusMicrophone>("idle");
     const queryTextAnalize = useTextAnalizeQuery(transcript);
     const mutation = useUsageQuery();
-    console.log(counter);
     
     useEffect(()=>{
         initCounter && setInterval(() => {
@@ -189,6 +189,12 @@ const useChatbotController = () => {
         const videoElement = videoRef.current;
         if (!videoElement) return;
 
+        if(video === DEFAULT_VIDEO_NAME){
+            setIsVideoDefault(true);
+        } else{
+            setIsVideoDefault(false);
+        }
+
         const handleVideoEnd = () => {
             if (statusRef.current === "listening" && !isLoadingRef.current && video !== DEFAULT_VIDEO_NAME) {
                 setVideo(DEFAULT_VIDEO_NAME);
@@ -318,7 +324,6 @@ const useChatbotController = () => {
         };
     }, []);
 
-
     // Data layers
     useEffect(()=>{
         window.dataLayer &&
@@ -338,6 +343,7 @@ const useChatbotController = () => {
         startContinuousListening,
         stopListening,
         queryTextAnalize,
+        isVideoDefault
     };
 };
 

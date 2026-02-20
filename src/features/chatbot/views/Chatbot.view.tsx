@@ -17,7 +17,8 @@ const ChatbotView = () => {
         videoRef,
         startContinuousListening,
         isSpeaking,
-        queryTextAnalize
+        queryTextAnalize,
+        isVideoDefault
     } = useChatbotController();
 
     return (
@@ -58,7 +59,7 @@ const ChatbotView = () => {
                                     key={`${queryTextAnalize.isLoading}-text`}
                                     {...fadeInMotion(0,0)}
                                 >
-                                    🎤 Te escucho
+                                    {isVideoDefault || isSpeaking ? '🎤 Te escucho' : ''}
                                 </motion.p>                                
                             )}
                         </AnimatePresence>
@@ -75,10 +76,14 @@ const ChatbotView = () => {
                         <>
                             {(status === 'listening' || status === 'processing') && (
                                 <WrapperBlur className="max-w-2xl" key={`static`}>
-                                    <AudioVisualizer
-                                        isListening={ true }
-                                        isActive={ isSpeaking }
-                                    />
+                                    {(isVideoDefault || isSpeaking) ? (
+                                        <AudioVisualizer
+                                            isListening={ true }
+                                            isActive={ isSpeaking }
+                                        />
+                                    ) : (
+                                        <p className="global-text">Si quieres interrumpir al asistente, simplemente di "pregunta" y luego formula tu duda.</p>
+                                    )}
                                 </WrapperBlur>
                             )}
                         </>
