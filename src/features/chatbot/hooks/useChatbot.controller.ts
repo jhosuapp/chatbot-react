@@ -10,6 +10,8 @@ const DEFAULT_VIDEO_NAME = '/default-wait-answer.mp4'
 const useChatbotController = () => {
     const [status, setStatus] = useState<StatusMicrophone>("idle");
     const [transcript, setTranscript] = useState("");
+    const [rawTranscript, setRawTranscript] = useState("");
+    const [rawTranscriptSecondary, setRawTranscriptSecondary] = useState("");
     const [counter, setCounter] = useState<number>(0);
     const [initCounter, setInitCounter] = useState<boolean>(false);
     const [video, setVideo] = useState("/INTRONEW.mp4");
@@ -25,7 +27,7 @@ const useChatbotController = () => {
     const statusRef = useRef<StatusMicrophone>("idle");
     const queryTextAnalize = useTextAnalizeQuery(transcript);
     const mutation = useUsageQuery();
-    
+
     useEffect(()=>{
         initCounter && setInterval(() => {
             setCounter(prev => prev + 1);
@@ -51,6 +53,12 @@ const useChatbotController = () => {
     useEffect(() => {
         isLoadingRef.current = queryTextAnalize.isLoading;
     }, [queryTextAnalize.isLoading]);
+
+    useEffect(() => {
+        setTranscript('');
+        setRawTranscript('');
+        setRawTranscriptSecondary('');
+    }, [queryTextAnalize.isSuccess]);
 
     useEffect(() => {
         statusRef.current = status;
@@ -241,6 +249,8 @@ const useChatbotController = () => {
             const confidence = event.results[current][0].confidence;
             const isFinal = event.results[current].isFinal;
 
+            setRawTranscript(transcriptText);
+
             // ── Animación: cualquier resultado intermedio activa isSpeaking ───
             if (!isFinal) {
                 setIsSpeaking(true);
@@ -261,6 +271,7 @@ const useChatbotController = () => {
                     setIsVideoPlaying(false);
                 }
                 const cleanedText = cleanTranscript(transcriptText);
+                setRawTranscriptSecondary(transcriptText);
                 setTranscript(cleanedText);
                 setStatus("processing");
                 statusRef.current = "processing";
@@ -343,7 +354,9 @@ const useChatbotController = () => {
         startContinuousListening,
         stopListening,
         queryTextAnalize,
-        isVideoDefault
+        isVideoDefault, 
+        rawTranscript,
+        rawTranscriptSecondary,
     };
 };
 

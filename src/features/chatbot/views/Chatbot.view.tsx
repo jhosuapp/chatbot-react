@@ -18,8 +18,12 @@ const ChatbotView = () => {
         startContinuousListening,
         isSpeaking,
         queryTextAnalize,
-        isVideoDefault
+        isVideoDefault, 
+        rawTranscript, 
+        rawTranscriptSecondary
     } = useChatbotController();
+
+    const validation = ((isVideoDefault || rawTranscript.toLocaleLowerCase().includes('pregunta') || rawTranscriptSecondary.toLocaleLowerCase().includes('pregunta')));
 
     return (
         <div className="w-full h-svh overflow-hidden px-[5%] animate-fadeIn">
@@ -59,7 +63,7 @@ const ChatbotView = () => {
                                     key={`${queryTextAnalize.isLoading}-text`}
                                     {...fadeInMotion(0,0)}
                                 >
-                                    {isVideoDefault || isSpeaking ? '🎤 Te escucho' : ''}
+                                    {validation ? '🎤 Te escucho' : ''}
                                 </motion.p>                                
                             )}
                         </AnimatePresence>
@@ -76,7 +80,7 @@ const ChatbotView = () => {
                         <>
                             {(status === 'listening' || status === 'processing') && (
                                 <WrapperBlur className="max-w-2xl" key={`static`}>
-                                    {(isVideoDefault || isSpeaking) ? (
+                                    {validation ? (
                                         <AudioVisualizer
                                             isListening={ true }
                                             isActive={ isSpeaking }
