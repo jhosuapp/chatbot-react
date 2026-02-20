@@ -18,16 +18,10 @@ const ChatbotView = () => {
         startContinuousListening,
         isSpeaking,
         queryTextAnalize,
-        isVideoDefault, 
-        rawTranscript, 
-        rawTranscriptSecondary
+        validation
     } = useChatbotController();
 
-    const validation = (
-        isVideoDefault || 
-        /pregunta/i.test(rawTranscript) || 
-        /pregunta/i.test(rawTranscriptSecondary)
-    );
+
 
     return (
         <div className="w-full h-svh overflow-hidden px-[5%] animate-fadeIn">
@@ -40,27 +34,8 @@ const ChatbotView = () => {
                     ) : (
                         <AnimatePresence mode="wait">
                             {queryTextAnalize.isLoading ? (
-                                <motion.p
-                                    className="global-text !text-xl 2xl:!text-3xl max-w-64 2xl:max-w-96 !text-right"
-                                    key={`${queryTextAnalize.isLoading}-text`}
-                                    {...fadeInMotion(0, 0)}
-                                    animate={
-                                        queryTextAnalize.isLoading
-                                        ? { opacity: [0.6, 1, 0.6] }
-                                        : { opacity: 1 }
-                                    }
-                                    transition={
-                                        queryTextAnalize.isLoading
-                                        ? {
-                                            duration: 2,
-                                            repeat: Infinity,
-                                            ease: "easeInOut",
-                                            }
-                                        : {}
-                                    }
-                                >
-                                    Estamos procesando lo que dijiste
-                                </motion.p>
+                                <>
+                                </>
                             ) : (
                                 <motion.p 
                                     className="global-text !text-xl 2xl:!text-3xl max-w-64 2xl:max-w-96 !text-right"

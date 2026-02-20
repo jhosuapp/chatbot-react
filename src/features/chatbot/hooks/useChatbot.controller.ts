@@ -28,6 +28,20 @@ const useChatbotController = () => {
     const queryTextAnalize = useTextAnalizeQuery(transcript);
     const mutation = useUsageQuery();
 
+    const validation = (
+        isVideoDefault || 
+        /pregunt/i.test(rawTranscript) || 
+        /pregunt/i.test(rawTranscriptSecondary) ||
+        videoRef.current?.paused
+    );
+
+    useEffect(()=>{
+        if(validation){
+            videoRef.current?.pause();
+            setVideo(DEFAULT_VIDEO_NAME);
+        }
+    },[validation]);
+
     useEffect(()=>{
         initCounter && setInterval(() => {
             setCounter(prev => prev + 1);
@@ -199,6 +213,7 @@ const useChatbotController = () => {
 
         if(video === DEFAULT_VIDEO_NAME){
             setIsVideoDefault(true);
+            videoRef.current?.play();
         } else{
             setIsVideoDefault(false);
         }
@@ -313,19 +328,6 @@ const useChatbotController = () => {
         recognitionRef.current = recognition;
     };
 
-    const stopListening = () => {
-        if (recognitionRef.current) {
-            recognitionRef.current.stop();
-            recognitionRef.current = null;
-            setStatus("idle");
-            statusRef.current = "idle";
-            setIsSpeaking(false);
-        }
-
-        if (speakingTimeoutRef.current) clearTimeout(speakingTimeoutRef.current);
-        if (inactivityTimeoutRef.current) clearTimeout(inactivityTimeoutRef.current);
-    };
-
     useEffect(() => {
         videoRef.current?.pause();
         return () => {
@@ -352,11 +354,11 @@ const useChatbotController = () => {
         isSpeaking,
         videoRef,
         startContinuousListening,
-        stopListening,
         queryTextAnalize,
         isVideoDefault, 
         rawTranscript,
         rawTranscriptSecondary,
+        validation
     };
 };
 
