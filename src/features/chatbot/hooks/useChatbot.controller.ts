@@ -4,7 +4,7 @@ import { useTextAnalizeQuery } from "./useTextAnalize.query";
 import { AnalysisIds } from "../interfaces/textAnalize.interface";
 import { useUsageQuery } from "./useUsage.query";
 
-const BOT_KEYWORDS = ["bot", "asistente", "vos", "pregunta"];
+const BOT_KEYWORDS = ["bot", "asistente", "vos", "pregunta", "preguntas", "preguntar"];
 const DEFAULT_VIDEO_NAME = '/default-wait-answer.mp4'
 
 const useChatbotController = () => {

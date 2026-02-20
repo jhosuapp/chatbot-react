@@ -23,7 +23,11 @@ const ChatbotView = () => {
         rawTranscriptSecondary
     } = useChatbotController();
 
-    const validation = ((isVideoDefault || rawTranscript.toLocaleLowerCase().includes('pregunta') || rawTranscriptSecondary.toLocaleLowerCase().includes('pregunta')));
+    const validation = (
+        isVideoDefault || 
+        /pregunta/i.test(rawTranscript) || 
+        /pregunta/i.test(rawTranscriptSecondary)
+    );
 
     return (
         <div className="w-full h-svh overflow-hidden px-[5%] animate-fadeIn">
