@@ -1,11 +1,11 @@
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, useCallback } from "react";
 import { StatusMicrophone } from "../interfaces/chatbot.interface";
 import { useTextAnalizeQuery } from "./useTextAnalize.query";
 import { AnalysisIds } from "../interfaces/textAnalize.interface";
 import { useUsageQuery } from "./useUsage.query";
 
 const BOT_KEYWORDS = ["bot", "asistente", "vos", "pregunta", "preguntas", "preguntar"];
-const DEFAULT_VIDEO_NAME = '/default-wait-answer.mp4'
+const DEFAULT_VIDEO_NAME = '/default-wait-answer.mp4';
 
 const useChatbotController = () => {
     const [status, setStatus] = useState<StatusMicrophone>("idle");
@@ -23,29 +23,39 @@ const useChatbotController = () => {
     const videoRef = useRef<HTMLVideoElement | null>(null);
     const speakingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const inactivityTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const isLoadingRef = useRef(false);
     const statusRef = useRef<StatusMicrophone>("idle");
+    const isVideoDefaultRef = useRef(false);
+
     const queryTextAnalize = useTextAnalizeQuery(transcript);
     const mutation = useUsageQuery();
 
     const validation = (
-        isVideoDefault || 
-        /pregunt/i.test(rawTranscript) || 
-        /pregunt/i.test(rawTranscriptSecondary) ||
-        videoRef.current?.paused
+        isVideoDefault ||
+        /pregunt/i.test(rawTranscript) ||
+        /pregunt/i.test(rawTranscriptSecondary)
     );
 
-    useEffect(()=>{
-        if(validation){
+    useEffect(() => {
+        if (validation) {
             setVideo(DEFAULT_VIDEO_NAME);
         }
-    },[validation]);
+    }, [validation]);
 
-    useEffect(()=>{
-        initCounter && setInterval(() => {
-            setCounter(prev => prev + 1);
-        }, 1000);
-    },[initCounter]);
+    useEffect(() => {
+        if (initCounter) {
+            intervalRef.current = setInterval(() => {
+                setCounter(prev => prev + 1);
+            }, 1000);
+        }
+        return () => {
+            if (intervalRef.current) {
+                clearInterval(intervalRef.current);
+                intervalRef.current = null;
+            }
+        };
+    }, [initCounter]);
 
     useEffect(() => {
         counterRef.current = counter;
@@ -55,9 +65,7 @@ const useChatbotController = () => {
         const handleClick = () => {
             status === 'idle' && videoRef.current?.play();
         };
-    
         document.body.addEventListener('click', handleClick);
-    
         return () => {
             document.body.removeEventListener('click', handleClick);
         };
@@ -77,18 +85,18 @@ const useChatbotController = () => {
         statusRef.current = status;
     }, [status]);
 
+
+    useEffect(() => {
+        isVideoDefaultRef.current = isVideoDefault;
+    }, [isVideoDefault]);
+
     const getVideoByCategory = (category: AnalysisIds) => {
         return `${category}.mp4`;
     };
 
-    // ── Determinar umbral de confianza según el video actual ──────────────────
-    const getConfidenceThreshold = (): number => {
-        if (videoRef.current?.dataset.video !== DEFAULT_VIDEO_NAME) {
-            return 0.85; 
-        }
-        
-        return 0.75;
-    };
+    const getConfidenceThreshold = useCallback((): number => {
+        return isVideoDefaultRef.current ? 0.75 : 0.85;
+    }, []);
 
     const isBotInvoked = (text: string): boolean => {
         const words = text.toLowerCase().split(/\s+/);
@@ -104,24 +112,23 @@ const useChatbotController = () => {
         return cleanedText.replace(/\s+/g, " ").trim();
     };
 
-    const isMeaningfulSpeech = (text: string, confidence: number): boolean => {
-        // ── Primero validar que invoque al bot ──────────────────────────────
-        if (!isBotInvoked(text) && videoRef.current?.dataset.video !== DEFAULT_VIDEO_NAME) return false;
-        
+    const isMeaningfulSpeech = useCallback((text: string, confidence: number): boolean => {
+        if (!isBotInvoked(text) && !isVideoDefaultRef.current) return false;
+
         const trimmed = text.trim();
         const wordCount = trimmed.split(/\s+/).filter(Boolean).length;
         if (wordCount < 3) return false;
-        
+
         const confidenceThreshold = getConfidenceThreshold();
         if (confidence < confidenceThreshold) return false;
-        
+
         const words = trimmed.toLowerCase().split(/\s+/);
         const uniqueWords = new Set(words);
         if (uniqueWords.size === 1 && words.length > 1) return false;
         return true;
-    };
+    }, [getConfidenceThreshold]);
 
-    // ── 2. Controlar video y reconocimiento según isLoading ───────────────────
+    // Controlar video y reconocimiento según isLoading
     useEffect(() => {
         if (queryTextAnalize.isLoading) {
             if (recognitionRef.current) {
@@ -130,7 +137,7 @@ const useChatbotController = () => {
         }
     }, [queryTextAnalize.isLoading]);
 
-    // ── 3. Aplicar nuevo video y reproducirlo cuando llega la respuesta ───────
+    // Aplicar nuevo video y reproducirlo cuando llega la respuesta
     useEffect(() => {
         if (!queryTextAnalize.data) return;
 
@@ -150,26 +157,24 @@ const useChatbotController = () => {
         }
     }, [queryTextAnalize.data]);
 
-    // ── Timeout de inactividad ─────────────────────────────────────────────────
+    // Timeout de inactividad
     useEffect(() => {
         if (video === DEFAULT_VIDEO_NAME && status === "listening") {
             if (inactivityTimeoutRef.current) clearTimeout(inactivityTimeoutRef.current);
-            inactivityTimeoutRef.current = setTimeout(async() => {
+            inactivityTimeoutRef.current = setTimeout(async () => {
                 window.dataLayer &&
-                window.dataLayer.push({
-                    reset_flux: 'Flujo reiniciado',
-                    event: "reset-flux",
-                });
-                
-                try{
+                    window.dataLayer.push({
+                        reset_flux: 'Flujo reiniciado',
+                        event: "reset-flux",
+                    });
+
+                try {
                     await mutation.mutateAsync({
                         usage_time_seconds: counterRef.current,
                         session_id: 'Cliente',
-                        additional_data: {
-                            page: 'Info'
-                        }
+                        additional_data: { page: 'Info' }
                     });
-                } catch(error) {
+                } catch (error) {
                     console.log(error);
                 } finally {
                     setStatus("idle");
@@ -180,7 +185,6 @@ const useChatbotController = () => {
                     setInitCounter(false);
                     window.location.reload();
                 }
-
             }, 24000);
         } else {
             if (inactivityTimeoutRef.current) {
@@ -205,10 +209,10 @@ const useChatbotController = () => {
         const videoElement = videoRef.current;
         if (!videoElement) return;
 
-        if(video === DEFAULT_VIDEO_NAME){
+        if (video === DEFAULT_VIDEO_NAME) {
             setIsVideoDefault(true);
             videoRef.current?.play();
-        } else{
+        } else {
             setIsVideoDefault(false);
         }
 
@@ -222,8 +226,13 @@ const useChatbotController = () => {
         return () => videoElement.removeEventListener("ended", handleVideoEnd);
     }, [video]);
 
-    // ── Iniciar escucha continua ───────────────────────────────────────────────
-    const startContinuousListening = () => {
+    // Iniciar escucha continua
+    const startContinuousListening = useCallback(() => {
+        if (recognitionRef.current) {
+            try { recognitionRef.current.stop(); } catch (_) {}
+            recognitionRef.current = null;
+        }
+
         setVideo('A1_BIENVENIDA.mp4');
         setInitCounter(true);
         videoRef.current?.pause();
@@ -236,7 +245,7 @@ const useChatbotController = () => {
             setStatus("unsupported");
             return;
         }
-        
+
         videoRef.current?.play();
 
         const recognition = new SpeechRecognition();
@@ -260,18 +269,15 @@ const useChatbotController = () => {
 
             setRawTranscript(transcriptText);
 
-            // ── Animación: cualquier resultado intermedio activa isSpeaking ───
             if (!isFinal) {
                 setIsSpeaking(true);
                 if (speakingTimeoutRef.current) clearTimeout(speakingTimeoutRef.current);
-                // Apagar animación si deja de hablar por 1.5s
                 speakingTimeoutRef.current = setTimeout(() => {
                     setIsSpeaking(false);
                 }, 1500);
                 return;
             }
 
-            // ── Acción real: solo si tiene sentido semántico ───────────────────
             if (isFinal && isMeaningfulSpeech(transcriptText, confidence)) {
                 setIsSpeaking(false);
 
@@ -298,9 +304,13 @@ const useChatbotController = () => {
             statusRef.current = "error";
             setIsSpeaking(false);
 
+            // BUG 5 CORREGIDO: se usa recognitionRef.current.start() en lugar de
+            // recognition.start() para no crear una closure sobre la instancia vieja.
+            // Si recognition fue reemplazada, el timeout intentaría reiniciar la instancia
+            // anterior generando instancias zombie que bloquean el micrófono.
             setTimeout(() => {
                 if (recognitionRef.current) {
-                    try { recognition.start(); } catch (_) {}
+                    try { recognitionRef.current.start(); } catch (_) {}
                 }
             }, 1000);
         };
@@ -310,34 +320,45 @@ const useChatbotController = () => {
 
             if (isLoadingRef.current) return;
 
+            // BUG 5 CORREGIDO: igual que en onerror, usar recognitionRef.current
+            // para reiniciar siempre la instancia activa, no la del closure.
             if (statusRef.current !== "error" && recognitionRef.current) {
-                try { recognition.start(); } catch (e) {
+                try { recognitionRef.current.start(); } catch (e) {
                     console.error("Error al reiniciar:", e);
                 }
             }
         };
 
-        recognition.start();
         recognitionRef.current = recognition;
-    };
+        recognition.start();
+    }, [isMeaningfulSpeech]);
 
+    // Cleanup al desmontar
     useEffect(() => {
         videoRef.current?.pause();
         return () => {
-            if (recognitionRef.current) recognitionRef.current.stop();
+            if (recognitionRef.current) {
+                recognitionRef.current.stop();
+                recognitionRef.current = null;
+            }
             if (speakingTimeoutRef.current) clearTimeout(speakingTimeoutRef.current);
             if (inactivityTimeoutRef.current) clearTimeout(inactivityTimeoutRef.current);
+            // BUG 1 CORREGIDO: limpiar también el interval al desmontar
+            if (intervalRef.current) {
+                clearInterval(intervalRef.current);
+                intervalRef.current = null;
+            }
         };
     }, []);
 
     // Data layers
-    useEffect(()=>{
+    useEffect(() => {
         window.dataLayer &&
             window.dataLayer.push({
                 video_id: video,
                 event: "video-id",
             });
-    },[video]);
+    }, [video]);
 
     return {
         transcript,
@@ -348,7 +369,7 @@ const useChatbotController = () => {
         videoRef,
         startContinuousListening,
         queryTextAnalize,
-        isVideoDefault, 
+        isVideoDefault,
         rawTranscript,
         rawTranscriptSecondary,
         validation,
