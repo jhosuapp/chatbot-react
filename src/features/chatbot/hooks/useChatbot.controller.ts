@@ -37,7 +37,6 @@ const useChatbotController = () => {
 
     useEffect(()=>{
         if(validation){
-            videoRef.current?.pause();
             setVideo(DEFAULT_VIDEO_NAME);
         }
     },[validation]);
@@ -125,11 +124,6 @@ const useChatbotController = () => {
     // ── 2. Controlar video y reconocimiento según isLoading ───────────────────
     useEffect(() => {
         if (queryTextAnalize.isLoading) {
-            if (videoRef.current) {
-                videoRef.current.pause();
-                videoRef.current.currentTime = 0;
-                setIsVideoPlaying(false);
-            }
             if (recognitionRef.current) {
                 try { recognitionRef.current.stop(); } catch (_) {}
             }
@@ -282,7 +276,6 @@ const useChatbotController = () => {
                 setIsSpeaking(false);
 
                 if (videoRef.current && !videoRef.current.paused) {
-                    videoRef.current.pause();
                     setIsVideoPlaying(false);
                 }
                 const cleanedText = cleanTranscript(transcriptText);
@@ -358,7 +351,8 @@ const useChatbotController = () => {
         isVideoDefault, 
         rawTranscript,
         rawTranscriptSecondary,
-        validation
+        validation,
+        initCounter
     };
 };
 

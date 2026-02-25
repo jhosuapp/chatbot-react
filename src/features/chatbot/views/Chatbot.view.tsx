@@ -18,7 +18,8 @@ const ChatbotView = () => {
         startContinuousListening,
         isSpeaking,
         queryTextAnalize,
-        validation
+        validation,
+        initCounter
     } = useChatbotController();
 
 
@@ -101,6 +102,7 @@ const ChatbotView = () => {
             <Video
                 video={ video }
                 videoRef={ videoRef as any }
+                initCounter={ initCounter }
             />
         </div>
     );
